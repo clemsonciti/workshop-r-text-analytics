@@ -1,0 +1,26 @@
+---
+title: "Fundamental Structure for Text Analysis"
+output: html_notebook
+---
+
+**Tidy Data **
+
+- Each variable is a column
+- Each observation is a row
+- Each type of observational unit forms a table
+
+** Tidy Text **
+
+- A token is a **meaningful unit of text**, that we are **interested in using for analysis**. 
+  - If I want to know which words are used most frequently in the English languange, my token is a ___
+  - If I want to learn how academic papers from different disciplines structure their writing differently, my token is a ___ or a ___
+- The process of splitting text into tokens is called **tokenization**
+- Tidy text format considers texts as being a table with one token per row. 
+
+```{r}
+plot(cars)
+```
+
+
+
+

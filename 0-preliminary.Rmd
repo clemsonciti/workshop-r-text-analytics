@@ -1,0 +1,21 @@
+---
+title: "Setup packages"
+output: html_notebook
+---
+
+
+```{r}
+setupLibrary <- function(libraryName){
+  if (!require(libraryName, character.only = TRUE)){
+    install.packages(libraryName, dep = TRUE)
+    if (!require(libraryName, character.only = TRUE)){
+      print('Package not found')
+    }
+  } else {
+    print('Package is loaded')
+  }
+}
+
+setupLibrary('tidytext')
+setupLibrary('tidyr')
+```
