@@ -1,11 +1,18 @@
 ---
-title: "R Notebook"
+title: "Word and Document Frequency"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+**Quantification of a document's contents and meanings**
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+- Can we *quantitatively infer* the contents and meanings of a document by looking at the *words* that make up the document?
+
+- Does the frequency of a word, called *term frequency* (i.e., how frequently a word occurs in a document), express how importance this word is in a document (thus providing an insight into the author's intention when using that word).
+
+- How do you account for frequently used words (e.g., the, is, of ...)?
+
+- 
+
 
 ```{r}
 plot(cars)
