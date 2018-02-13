@@ -17,10 +17,102 @@ output: html_notebook
 - The process of splitting text into tokens is called **tokenization**
 - Tidy text format considers texts as being a table with one token per row. 
 
+
+** Emeril's Restauran Comments Data **
+
 ```{r}
-plot(cars)
+data_dir <- 'data'
+restaurant_dir <- 'emerils'
+
+input_files <- list.files(file.path(data_dir,
+                                    restaurant_dir),
+                          full.names = TRUE)
+
+file_names <- list.files(file.path(data_dir,
+                                   restaurant_dir))
+
+dates <- c()
+reviews <- c()
+ratings <- c()
+
+for (i in 1:length(file_names)){
+    current_page <- read_html(input_files[i])
+    current_revs <- xml_find_all(current_page, "//div[@itemprop='review']")
+    list_revs <- as_list(current_revs)
+    count_revs <- length(list_revs)
+    for (j in 1:count_revs){
+        review_date <- attr(list_revs[[j]][[5]],'content') # Review Date
+        review_rating <- as.numeric(attr(list_revs[[j]][[3]][[2]],'content')) # Review Rating
+        review_contents <- list_revs[[j]][[6]][[1]]
+        
+        dates <- c(dates, review_date)
+        ratings <- c(ratings, review_rating)
+        reviews <- c(reviews, review_contents)
+    }
+}
+
+df_emerils <- data.frame(Date = dates,
+                         Rating = ratings,
+                         Review = reviews, stringsAsFactors = FALSE)
 ```
 
+```{r}
+?unnest_tokens
+```
+
+
+```{r}
+library(tidytext)
+
+tidy_emerils_word <- df_emerils %>%
+  unnest_tokens(word, Review)
+```
+
+** Challenge **
+
+Create a table called `tidy_emerils_sentence` in which the `df_emerils`'s reviews are tokenized by sentences. 
+
+```{r}
+
+```
+
+
+We can remove stop words ...
+
+```{r}
+data(stop_words)
+```
+
+```{r}
+library(dplyr)
+
+tidy_emerils_word <- tidy_emerils_word %>%
+  anti_join(stop_words)
+```
+
+Plot the most common words in Emerils' reviews
+
+```{r}
+library(ggplot2)
+
+tidy_emerils_word %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 300) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip()
+```
+
+** Challenge (15 minutes) **
+
+The Sobys restaurant in Greenville wants to study the difference in 5-star reviews and 1-star reviews. Using a word-frequency approach, identifies the food items appear most often in 5-star reviews versus those appear in 1-star reviews.
+
+```{r}
+
+
+```
 
 
 
