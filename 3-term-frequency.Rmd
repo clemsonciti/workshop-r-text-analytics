@@ -7,17 +7,97 @@ output: html_notebook
 
 - Can we *quantitatively infer* the contents and meanings of a document by looking at the *words* that make up the document?
 
-- Does the frequency of a word, called *term frequency* (i.e., how frequently a word occurs in a document), express how importance this word is in a document (thus providing an insight into the author's intention when using that word).
+- Does the frequency of a word, called *term frequency (tf)* (i.e., how frequently a word occurs in a document), express how importance this word is in a document (thus providing an insight into the author's intention when using that word).
+  - How do you account for frequently used words (e.g., the, is, of ...)?
+- Another metric is the *inverse document frequency (idf)*, which represents the reduction of weight for commonly used word (across a set of documents) and increase of weight for words that are used less frequently (perhaps more unique to individual documents). 
+- *tf-idf*, a combination of two metrics, measure the importance of a word to a document in a collection (*corpus*) of documents. 
 
-- How do you account for frequently used words (e.g., the, is, of ...)?
 
-- 
+How can we further quantify the meanings of Emerils' reviews with respects to rating scores?
+
+```{r}
+library(dplyr)
+library(tidytext)
+
+data_dir <- 'data'
+restaurant_dir <- 'emerils'
+
+input_files <- list.files(file.path(data_dir,
+                                    restaurant_dir),
+                          full.names = TRUE)
+
+file_names <- list.files(file.path(data_dir,
+                                   restaurant_dir))
+
+dates <- c()
+reviews <- c()
+ratings <- c()
+
+for (i in 1:length(file_names)){
+    current_page <- read_html(input_files[i])
+    current_revs <- xml_find_all(current_page, "//div[@itemprop='review']")
+    list_revs <- as_list(current_revs)
+    count_revs <- length(list_revs)
+    for (j in 1:count_revs){
+        review_date <- attr(list_revs[[j]][[5]],'content') # Review Date
+        review_rating <- as.numeric(attr(list_revs[[j]][[3]][[2]],'content')) # Review Rating
+        review_contents <- list_revs[[j]][[6]][[1]]
+        
+        dates <- c(dates, review_date)
+        ratings <- c(ratings, review_rating)
+        reviews <- c(reviews, review_contents)
+    }
+}
+
+df_emerils <- data.frame(Date = dates,
+                         Rating = ratings,
+                         Review = reviews, stringsAsFactors = FALSE)
+```
+
+We first need to break the reviews down to a tidy text format:
+
+```{r}
+tidy_emerils <- df_emerils %>%
+  unnest_tokens(word, Review) %>%
+  anti_join(stop_words) %>%
+  count(Rating, word, sort = TRUE) %>%
+  ungroup()
+
+total_words <- tidy_emerils %>%
+  group_by(Rating) %>%
+  summarize(total = sum(n))
+
+tidy_emerils <- left_join(tidy_emerils, total_words)
+```
+
+
+The library `tidytext` provides a convenient function called `bind_tf_idf` to calculate *tf*, *idf*, and *td-idf*. 
+
+```{r}
+tidy_emerils <- tidy_emerils %>%
+  bind_tf_idf(word, Rating, n)
+
+tidy_emerils %>%
+  arrange(word)
+```
+
 
 
 ```{r}
-plot(cars)
+tidy_emerils %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>% 
+  group_by(Rating) %>% 
+  top_n(15) %>% 
+  ungroup %>%
+  ggplot(aes(word, tf_idf, fill = Rating)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~Rating, ncol = 2, scales = "free") +
+  coord_flip()
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+
+

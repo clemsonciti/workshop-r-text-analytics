@@ -1,16 +1,118 @@
 ---
-title: "R Notebook"
+title: "n-grams"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+Sometimes, words need to be studied in context (i.e., with other words). For example, *like* and *don't like*. This is called n-grams. 
 
 ```{r}
-plot(cars)
+library(dplyr)
+library(tidytext)
+?unnest_tokens
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+Let's revisit our restaurant reviews
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+```{r}
+data_dir <- 'data'
+restaurant_dir <- 'emerils'
+
+input_files <- list.files(file.path(data_dir,
+                                    restaurant_dir),
+                          full.names = TRUE)
+
+file_names <- list.files(file.path(data_dir,
+                                   restaurant_dir))
+
+dates <- c()
+reviews <- c()
+ratings <- c()
+
+for (i in 1:length(file_names)){
+    current_page <- read_html(input_files[i])
+    current_revs <- xml_find_all(current_page, "//div[@itemprop='review']")
+    list_revs <- as_list(current_revs)
+    count_revs <- length(list_revs)
+    for (j in 1:count_revs){
+        review_date <- attr(list_revs[[j]][[5]],'content') # Review Date
+        review_rating <- as.numeric(attr(list_revs[[j]][[3]][[2]],'content')) # Review Rating
+        review_contents <- list_revs[[j]][[6]][[1]]
+        
+        dates <- c(dates, review_date)
+        ratings <- c(ratings, review_rating)
+        reviews <- c(reviews, review_contents)
+    }
+}
+
+df_emerils <- data.frame(Date = dates,
+                         Rating = ratings,
+                         Review = reviews, stringsAsFactors = FALSE)
+```
+
+We first need to break the reviews down to a tidy text format:
+
+```{r}
+tidy_emerils <- df_emerils %>%
+  unnest_tokens(bigram, Review, token = 'ngrams', n = 2) 
+
+tidy_emerils
+```
+
+How do you remove ngrams consisting of stop words?
+
+```{r}
+bigrams_separated <- tidy_emerils %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+bigrams_emerils <- bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = ' ')
+
+bigrams_emerils
+```
+
+**Challenge (15 minutes)**
+
+Rebuild the `id-tdf` graphs in module 3 for the bigram review data. 
+
+```{r}
+
+```
+
+
+**Challenge (15 minutes)**
+
+Rebuild the sentiment analysis graphs for Shakespeare's "Much Ado About Nothing" and "Romeo and Juliet" using an n-gram approach and the *bing* sentiment lexicon. It should be noted that words preceeded by **not** should have their sentiment score negated. 
+
+```{r}
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
